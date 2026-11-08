@@ -14,7 +14,6 @@
             <option value="$PROJECT_DIR$/domain" />
           </set>
         </option>
-        <option name="myGradleHome" value="" />
       </GradleProjectSettings>
     </option>
   </component>

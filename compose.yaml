@@ -1,0 +1,56 @@
+name: app-backend
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - database-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    environment:
+      SERVER_HOST: "0.0.0.0"
+      SERVER_PORT: "8080"
+      DB_URL: "jdbc:postgresql://db:5432/${DB_NAME:?DB_NAME is required}?connectTimeout=5"
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_POOL_SIZE: "5"
+      DB_MIN_IDLE: "1"
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    stop_grace_period: 15s
+
+volumes:
+  database-data:
+    external: true
+    name: ${DB_VOLUME:?DB_VOLUME is required}
